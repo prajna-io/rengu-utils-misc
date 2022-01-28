@@ -8,7 +8,7 @@ import click
 from rengu.util.text import *
 
 
-def debug_format_body(body, wrap, indent, maxlen):
+def debug_format_blocks(body, wrap, indent, maxlen):
 
     yield f"{wrap=}\n{indent=}\n{maxlen=}\n"
 
@@ -21,7 +21,7 @@ def debug_format_body(body, wrap, indent, maxlen):
                 yield f"{j:>4}: {line}\n"
 
 
-def format_body(fd, wrap, indent, maxlen):
+def format_blocks(fd, wrap, indent, maxlen):
 
     for block in stream_readblocks_re("\n\n", fd):
 
@@ -47,6 +47,8 @@ def format_body(fd, wrap, indent, maxlen):
             yield wrap.fill(" ".join([line for _, line in lines(block, kind=kind)]))
 
 
+
+
 @click.command()
 @click.option(
     "--wrap/--no-wrap", "-w/-W", is_flag=True, show_default=True, default=True
@@ -54,18 +56,26 @@ def format_body(fd, wrap, indent, maxlen):
 @click.option("--indent", "-i", default=0, type=int)
 @click.option("--maxlen", "-m", default=75, type=int)
 @click.option("--debug", "-D", is_flag=True)
-def main(wrap, indent, maxlen, debug):
+@click.option("--word-index", is_flag=True)
+def main(wrap, indent, maxlen, debug, word_index):
 
     if not wrap and indent:
         click.echo("Wrap and indent options are mutually exclusive")
         return
 
     if debug:
-        for f in debug_format_body(sys.stdin, wrap, indent, maxlen):
+        for f in debug_format_blocks(sys.stdin, wrap, indent, maxlen):
             sys.stdout.write(f)
 
+    if word_index:
+        for j, block in enumerate(stream_readblocks_re("\n\n", sys.stdin)):
+            for i, line in lines(block):
+                for num, pos, word in words(line):
+                    print(j, i, num, pos, word)
+
+
     else:
-        sys.stdout.write("\n\n".join(format_body(sys.stdin, wrap, indent, maxlen)))
+        sys.stdout.write("\n\n".join(format_blocks(sys.stdin, wrap, indent, maxlen)))
         print("")
 
 
