@@ -2,10 +2,11 @@
 
 import sys
 import re
+import textwrap
 
 import click
 
-import textwrap
+from rengu.util.text import *
 
 WHOLE = re.MULTILINE & re.DOTALL
 RE_ALLWHITE = re.compile("^\s*$")
@@ -194,37 +195,6 @@ def yformat_body(text):
     return "\n\n".join(blocks)
 
 
-def format_body(t, wrap, indent, maxlen):
-    """clean
-    :t:         Text to clean
-    """
-
-    first = True
-    block = ""
-
-    for line in t.readlines():
-
-        if RE_ALLWHITE.match(line):
-
-            if len(block):
-                if first:
-                    first = False
-                else:
-                    yield "\n"
-
-                yield fix_block(block, wrap, indent, maxlen)
-                block = ""
-
-                yield "\n"
-
-        else:
-            block += line
-
-    if len(block):
-        if not first:
-            yield "\n"
-
-        yield from fix_block(block, wrap, indent, maxlen)
 
 
 def unlong(line, indent, maxlen):
@@ -276,6 +246,50 @@ def fix_block(block, wrap, indent, maxlen):
         )
 
         return wrap.fill(result)
+
+def xformat_body(t, wrap, indent, maxlen):
+    """clean
+    :t:         Text to clean
+    """
+
+    first = True
+    block = ""
+
+    for line in t.readlines():
+
+        if RE_ALLWHITE.match(line):
+
+            if len(block):
+                if first:
+                    first = False
+                else:
+                    yield "\n"
+
+                yield fix_block(block, wrap, indent, maxlen)
+                block = ""
+
+                yield "\n"
+
+        else:
+            block += line
+
+    if len(block):
+        if not first:
+            yield "\n"
+
+        yield from fix_block(block, wrap, indent, maxlen)
+
+def format_body(body, wrap, indent, maxlen):
+
+    yield f"{wrap=}\n{indent=}\n{maxlen=}\n"
+    
+    for i, block in enumerate(stream_readblocks_re("\n\n", body)):
+
+        yield f"----- BLOCK {i} --- { detect_kind(block) }\n"
+        
+        for j, line in lines(block):
+            yield f"{j:>4}: {line}\n"
+        yield "\n"
 
 
 @click.command()
