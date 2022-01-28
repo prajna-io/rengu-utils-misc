@@ -1,0 +1,298 @@
+#!/usr/bin/env python
+
+import sys
+import re
+
+import click
+
+import textwrap
+
+WHOLE = re.MULTILINE & re.DOTALL
+RE_ALLWHITE = re.compile("^\s*$")
+RE_STARTWHITE = re.compile("^\s+")
+RE_LABELS = re.compile("^.*(<\w+>.+)+", flags=WHOLE)
+
+RE_NOFORMAT = re.compile(".*\n\s+", flags=WHOLE)
+
+FIX_RE_MAP = [
+    # Common character conversions
+    
+    (re.compile("\s+", flags=WHOLE), " "),
+    (re.compile("\t", flags=WHOLE), "    "),
+    (re.compile("&", flags=WHOLE), "and"),
+    # (re.compile(":", flags=WHOLE), "："),
+    (re.compile("[‟”“〝〞＂]", flags=WHOLE), '"'),
+    (re.compile("[＇‛’‘']", flags=WHOLE), "'"),
+    (re.compile("¬\n", flags=WHOLE), ""),
+    (re.compile("­", flags=WHOLE), "-"),
+    (re.compile("[–—―]+", flags=WHOLE), " -- "),
+    # (re.compile("(?:[^\w])[-–—―]+(?:[^[\w\r\n])", flags=WHOLE), " -- "),
+    (re.compile("(?:[^\w])[-–—―]+ *", flags=WHOLE), " -- "),
+    (re.compile("(…|\.\s*\.\s*\.)", flags=WHOLE), " ... "),
+    (re.compile("\s*(\.\s*){3}(\.\s*)\s*", flags=WHOLE), ". ... "),
+    (re.compile("([,;])(\w)", flags=WHOLE), r"\1 \2"),
+]
+
+
+def blocks(text):
+    """ blocks(text)
+    Split text into blocks .... either paragraphs or stanzas.
+    """
+
+    for block in text.rstrip().split("\n\n"):
+        yield block.rstrip()
+
+
+def guess_format(block):
+
+    # look for labeled verses
+    if RE_LABELS.match(block):
+        return "labeled"
+
+    lines = [x.rstrip() for x in block.split("\n")]
+
+    # any block that starts with a ">" is a blockquote
+    # and passed without alteration
+    if x.startswith(">"):
+        return "quote"
+
+    # any line starts with whitespace means verse
+    if True in [RE_STARTWHITE.match(x) is not None for x in lines]:
+        return "verse"
+
+    # case of one line
+    if len(lines) == 1:
+        if "." in lines[0]:
+            return "prose"
+
+        return "verse"
+
+    # all lines between 80 and 60 means prose
+    lengths = [len(l) for l in lines]
+    if max(lengths) < 81 and min(lengths[:-1]) > 59:
+        return "prose"
+
+    return "unknown"
+
+
+def lines_labeled(block):
+
+    ZERO = re.compile("^([^<]+)")
+    VERSE = re.compile("^<(\w+)>([^<]+)")
+
+    remainder = block
+
+    if ZERO.match(remainder):
+        m = ZERO.match(remainder).group(0)
+        yield "0", m
+        remainder = remainder[len(m) :]
+
+    while True:
+
+        match = VERSE.match(remainder)
+
+        if not match:
+            return
+
+        v, m = match.groups()
+        m = m.replace("\n", " ")
+        yield v, m
+
+        remainder = remainder[match.end() :]
+
+
+def lines_verse(block):
+
+    v = 1
+    last_indent = 0
+    current = ""
+
+    for line in block.split("\n"):
+
+        if len(line.strip()) == 0:
+            continue
+
+        indent = len(line.rstrip()) - len(line.strip())
+
+        if indent == last_indent + 1:
+            current = current + " " + line.strip()
+
+        else:
+            if current:
+                yield v, current
+                v = v + 1
+            current = line
+            last_indent = indent
+
+    yield v, current
+    return
+
+
+def lines_prose(block):
+
+    v = 1
+
+    b = block.replace("\n", " ").rstrip()
+
+    for line in re.findall("[^\.\?\!]+[\.\?\!]", b):
+        if line.strip():
+            yield v, line.strip()
+            v = v + 1
+
+    return
+
+
+def yformat_body(text):
+    """ yformat_body(text)
+    Format body so that it conforms to YAML.
+    """
+
+    # first perform non-reversable substitutions
+    for (m, replace) in FIX_RE_MAP:
+        body = m.sub(replace, body)
+
+    blocks = []
+    block = ""
+    last_indent = 0
+
+    # Find line breaks and guess blocks
+    for line in text.split("\n"):
+
+        new_indent = len(line) - len(line.lstrip())
+
+        # a blank line marks a new block
+        if RE_ALLWHITE.match(line):
+            blocks.append(block)
+            block = ""
+            last_indent = 0
+            continue
+
+        # a one-off indent is a continued line of verse
+        elif new_indent == (indent + 1):
+            block = block + line.rstrip()
+            continue
+
+        # a prose paragraph has no indentation and lines ending
+        # between 70 and 80 characters
+        elif (
+            last_indent == 0
+            and new_indent == 0
+            and "\n" not in block
+            and len(line) > 69
+            and len(line) < 81
+        ):
+            block = block + " " + line.rstrip()
+
+        # check for other lines of verse?
+        # default prose?
+
+    blocks.append(block)
+
+    # perform wrap on long lines
+    # perform post conversions (i.e. find starting bad characters)
+
+    return "\n\n".join(blocks)
+
+
+def format_body(t, wrap, indent, maxlen):
+    """clean
+    :t:         Text to clean
+    """
+
+    first = True
+    block = ""
+
+    for line in t.readlines():
+
+        if RE_ALLWHITE.match(line):
+
+            if len(block):
+                if first:
+                    first = False
+                else:
+                    yield "\n"
+
+                yield fix_block(block, wrap, indent, maxlen)
+                block = ""
+
+                yield "\n"
+
+        else:
+            block += line
+
+    if len(block):
+        if not first:
+            yield "\n"
+
+        yield from fix_block(block, wrap, indent, maxlen)
+
+
+def unlong(line, indent, maxlen):
+
+    if len(line) > maxlen:
+        wrap = textwrap.TextWrapper(
+            width=maxlen,
+            expand_tabs=True,
+            initial_indent=" " * indent,
+            subsequent_indent=" " * indent + " ",
+            replace_whitespace=True,
+            fix_sentence_endings=True,
+            break_long_words=False,
+            break_on_hyphens=False,
+        )
+
+        return wrap.fill(line)
+
+    else:
+        return line
+
+
+def fix_block(block, wrap, indent, maxlen):
+
+    result = block
+
+    for (m, replace) in FIX_RE_MAP:
+        result = m.sub(replace, result)
+
+    if block.startswith(">"):
+        return block[:-1]
+
+    elif not wrap or RE_NOFORMAT.match(result):
+
+        return "\n".join(
+            (unlong(l.rstrip(), indent, maxlen) for l in result.rstrip().split("\n"))
+        )
+
+    else:
+        wrap = textwrap.TextWrapper(
+            width=maxlen,
+            expand_tabs=True,
+            initial_indent=" " * indent,
+            subsequent_indent=" " * indent,
+            replace_whitespace=True,
+            fix_sentence_endings=True,
+            break_long_words=False,
+            break_on_hyphens=False,
+        )
+
+        return wrap.fill(result)
+
+
+@click.command()
+@click.option(
+    "--wrap/--no-wrap", "-w/-W", is_flag=True, show_default=True, default=True
+)
+@click.option("--indent", "-i", default=0, type=int)
+@click.option("--maxlen", "-m", default=75, type=int)
+def main(wrap, indent, maxlen):
+
+    if not wrap and indent:
+        click.echo("Wrap and indent options are mutually exclusive")
+        return
+
+    for f in format_body(sys.stdin, wrap, indent, maxlen):
+        sys.stdout.write(f)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,114 @@
+#!/bin/bash
+
+womeninpraise() {
+    rengu show  Category=fragment \
+        Source.ID=7999efeb-41a7-47ee-a0ba-7244a837f782 | \
+        jq  -r '{ ID, page: (.Source.Page ), by: ( .By // .Description // .Source.Source.Title // "?" ), first: ( .Title // (.Body | split("\n") | ( .[0] + " …" ) ) ) } | @text "\(.ID) \(.page)  \t\(.by) = \(.first)"' | \
+        sort -k2g -k3V
+}
+
+way() {
+    ( rengu show Category=fragment \
+        Source.ID=7a270324-e66c-45bf-af0d-c7bafae9fe40; \
+    rengu show Category=commentary \
+        Source.ID=7a270324-e66c-45bf-af0d-c7bafae9fe40 ) | \
+        jq -r '{ ID, page: .Source.Page, locus: (.Source.Locus // ""), first: ( .Title // (.Body | split("\n") | ( .[0] + " …" ) ) ) } | @text "\(.ID) \(.page)  \t\(.locus) \t\(.first)"' |  \
+        sort -k2g -k3V
+}
+
+bigredbook() {
+    rengu show Category=fragment \
+        Source.ID=e505f39e-36b5-44ad-be24-ab33c7f44858 | \
+        jq -r '{ ID, page: .Source.Page, locus: (.Source.Locus // ""), first: ( .Title // (.Body | split("\n") | ( .[0] + " …" ) ) ) } | @text "\(.ID) \(.page)  \t\(.locus) \t\(.first)"' |  \
+        sort -k2g -k3V
+}
+
+artofpeace() {
+    rengu show Category=fragment \
+        Source.ID=f4cd2fa4-b16f-4f78-9018-55d077fb8c43 | \
+        jq -r '{ ID, page: .Source.Page, locus: (.Source.Locus // ""), first: ( .Title // (.Body | split("\n") | ( .[0] + " …" ) ) ) } | @text "\(.ID) \(.page)  \t\(.locus) \(.first)"' |  \
+        sort -k2g -k3V
+}
+
+element() {
+    rengu show Category=fragment \
+        Source.ID=363a91cb-5c11-4f5d-bbdf-52bdf6844afd | \
+        jq  -r '{ ID, page: (.Source.Page ), by: ( .By // .Description // .Source.Source.Title // "?" ), first: ( .Title // (.Body | split("\n") | ( .[0] + " …" ) ) ) } | @text "\(.ID) \(.page)  \t\(.by) = \(.first)"' | \
+        sort -k2g -k3V
+}
+
+enlightened() {
+    rengu show Category=fragment \
+        Source.ID=ced77250-b675-41cc-a358-8e1d5765ade5 | \
+        jq  -r '{ ID, page: (.Source.Page ), by: ( .By // .Description // .Source.Source.Title // "?" ), first: ( .Title // (.Body | split("\n") | ( .[0] + " …" ) ) ) } | @text "\(.ID) \(.page)  \t\(.by) = \(.first)"' | \
+        sort -k2g -k3V
+}
+
+mysticalchap() {
+    rengu show Category=fragment \
+        Source.ID=1b094a34-7152-4d5b-bde5-e4672faad702 | \
+        jq  -r '{ ID, page: (.Source.Page ), locus: (.Source.Locus // ""), by: ( .By // .Description // .Source.Source.Title // "?" ), first: ( .Title // (.Body | split("\n") | ( .[0] + " …" ) ) ) } | @text "\(.ID) \(.page)  \t\(.locus)  \t\(.by) = \(.first)"' | \
+        sort -k2g -k3V
+}
+
+lovepoems() {
+    rengu show Category=fragment \
+        Source.ID=daf39c8e-ea72-410a-aede-4add3f5dac49 | \
+        jq  -r '{ ID, page: (.Source.Page ), locus: (.Source.Locus // ""), by: ( .By // .Description // .Source.Source.Title // "?" ), first: ( .Title // (.Body | split("\n") | ( .[0] + " …" ) ) ) } | @text "\(.ID) \(.page)  \t(.locus)  \t\(.by) = \(.first)"' | \
+        sort -k2g -k3V
+}
+
+
+technicians() {
+    rengu show Category=fragment \
+        Source.ID=a0c84296-2eb9-4473-a67f-5d18a8aadd85 | \
+        jq  -r '{ ID, page: (.Source.Page ), by: ( .By // .Description // .Source.Source.Title // "?" ), first: ( .Title // (.Body | split("\n") | ( .[0] + " …" ) ) ) } | @text "\(.ID) \(.page)  \t\(.by) = \(.first)"' | \
+        sort -k2g -k3V
+}
+
+journalx() {
+    rengu show \
+      Category=journal Source.Title=* | \
+        jq  -r '{ ID, date: (.Date), page: (.Source.Page ), book: (.Source.Title), first: ( .Title // (.Body | split("\n") | ( .[0] + " …" ) ) ) } | @text "\(.ID) \(.date) \(.book):\(.page)  \t\(.first)"' | \
+        sort -k2g -k3
+}
+
+
+journal() {
+    rengu show \
+        -mdescription \
+        Category=journal | \
+        jq -r '@text "\(.ID) \(.Date) \(._description)"' | \
+        sort -k2g
+}
+
+haveread() {
+    rengu show -ojson \
+        State.Read=* | \
+        jq -r '{ ID, Title, read: .State.Read, by: ([(.By[]? // .By?, .Translator[]? // .Translator?, .Editor[]? // .Editor? ) | values ] | join(", ") ) } | @text "\(.ID) \(.read)\t\(.Title) / \(.by)"' | \
+        sort -k2g
+}
+
+######################
+
+FUNS=$( grep '^[[:alnum:]]*()' $0 | sed -e 's@() {@@' | paste -sd '|' )
+
+do_help() {
+    echo "Select one of:"
+    for x in $( echo ${FUNS} | tr '|' ' ' | sed -e 's/FUNS.*//' ); do
+      echo "  $x"
+    done
+}
+
+for ARG in $@; do
+
+  if [[ "$ARG" =~ ^$FUNS$ ]]; then
+	$ARG
+  elif [[ "$ARG" == "help" ]]; then
+	do_help
+  else
+    echo "Not found (try help)"
+  fi
+
+done
+
