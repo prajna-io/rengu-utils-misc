@@ -26,7 +26,7 @@ setup(
         "Programming Language :: Python :: 3.9",
     ],
     packages=find_packages(),
-    install_requires=["rengu=6.0"],
+    install_requires=["rengu", ],
     extras_require=requires_extra,
     scripts=[
         "textflow",

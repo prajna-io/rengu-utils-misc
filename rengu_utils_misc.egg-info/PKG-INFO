@@ -1,0 +1,21 @@
+Metadata-Version: 2.1
+Name: rengu-utils-misc
+Version: 6.0
+Summary: Extra tools used with rengu
+Home-page: https://prajna.io
+Author: Thornton K. Prime
+Author-email: thornton.prime@gmail.com
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.9
+Description-Content-Type: text/markdown
+Provides-Extra: all
+
+
+Miscellaneous rengu utilities.
+
+Mostly shell scripts, but other things used to help manage content.
+
+
