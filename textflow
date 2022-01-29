@@ -52,10 +52,10 @@ def format_blocks(fd, wrap, indent, maxlen):
 @click.option(
     "--wrap/--no-wrap", "-w/-W", is_flag=True, show_default=True, default=True
 )
-@click.option("--indent", "-i", default=0, type=int)
-@click.option("--maxlen", "-m", default=75, type=int)
-@click.option("--debug", "-D", is_flag=True)
-@click.option("--word-index", is_flag=True)
+@click.option("--indent", "-i", default=0, type=int, help="Specify indent")
+@click.option("--maxlen", "-m", default=75, type=int, help="Maximum line length")
+@click.option("--debug", "-D", is_flag=True, help="Detailed breakdown")
+@click.option("--word-index", is_flag=True, help="Index of words")
 def main(wrap, indent, maxlen, debug, word_index):
 
     if not wrap and indent:
@@ -69,8 +69,7 @@ def main(wrap, indent, maxlen, debug, word_index):
     if word_index:
         data = sys.stdin.read()
         for word_pos, (block_num, line_num, word_num), verse, position, word in index_content( data ):
-            print(word_pos, block_num, line_num, word_num, verse, position, word) 
-            # print(word_pos, block_num, line_num, word_num, verse, word) 
+            print(f"0x{word_pos:016x} {block_num+1}.{line_num+1}.{word_num+1} / {block_num+1}.{verse}.{word_num+1} {word}")
 
     else:
         sys.stdout.write("\n\n".join(format_blocks(sys.stdin, wrap, indent, maxlen)))
