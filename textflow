@@ -48,7 +48,6 @@ def format_blocks(fd, wrap, indent, maxlen):
 
 
 
-
 @click.command()
 @click.option(
     "--wrap/--no-wrap", "-w/-W", is_flag=True, show_default=True, default=True
@@ -68,11 +67,10 @@ def main(wrap, indent, maxlen, debug, word_index):
             sys.stdout.write(f)
 
     if word_index:
-        for j, block in enumerate(stream_readblocks_re("\n\n", sys.stdin)):
-            for i, line in lines(block):
-                for num, pos, word in words(line):
-                    print(j, i, num, pos, word)
-
+        data = sys.stdin.read()
+        for word_pos, (block_num, line_num, word_num), verse, position, word in index_content( data ):
+            print(word_pos, block_num, line_num, word_num, verse, position, word) 
+            # print(word_pos, block_num, line_num, word_num, verse, word) 
 
     else:
         sys.stdout.write("\n\n".join(format_blocks(sys.stdin, wrap, indent, maxlen)))
