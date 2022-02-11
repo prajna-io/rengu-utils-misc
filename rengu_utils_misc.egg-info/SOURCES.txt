@@ -1,9 +1,0 @@
-README.md
-list-source
-setup.py
-textflow
-rengu_utils_misc.egg-info/PKG-INFO
-rengu_utils_misc.egg-info/SOURCES.txt
-rengu_utils_misc.egg-info/dependency_links.txt
-rengu_utils_misc.egg-info/requires.txt
-rengu_utils_misc.egg-info/top_level.txt
