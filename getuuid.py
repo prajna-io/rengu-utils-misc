@@ -12,4 +12,3 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     for match in UUID.finditer(page):
         print(match[0])
-
