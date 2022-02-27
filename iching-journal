@@ -2,6 +2,7 @@
 
 from datetime import date
 import sys
+from uuid import uuid4
 
 sys.path.append("/home/thornton/work/iching")
 
@@ -12,8 +13,10 @@ from yijing.reading import Reading
 r = Reading(sys.argv[1])
 
 now = date.strftime(date.today(), "%Y%m%d")
+uid = str(uuid4())
 
 print(f"""---
+ID: {uid}
 Category: journal
 Date: {now}""")
 
