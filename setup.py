@@ -30,8 +30,5 @@ setup(
         "rengu",
     ],
     extras_require=requires_extra,
-    scripts=[
-        "textflow",
-        "list-source",
-    ],
+    scripts=["textflow", "list-source", "genid"],
 )
