@@ -15,7 +15,7 @@ def get_text_data(fd: TextIO):
     word = ""
     word_pos = 0
 
-    nsent = 0
+    nsent = 1
     sent_pos = 0
     sent = ""
 
@@ -23,7 +23,7 @@ def get_text_data(fd: TextIO):
     line = ""
     line_pos = 0
 
-    nblok = 0
+    nblok = 1
     blok_pos = 0
     blok = ""
 
@@ -126,17 +126,9 @@ def get_text_data(fd: TextIO):
         yield "BLOK", blok_pos, nblok, blok.rstrip()
 
 
-if __name__ == "__main__":
-
-    from sys import stdin
-    from io import StringIO
-
-    stream = StringIO(stdin.read())
-    data = stream.getvalue()
-    stream.seek(0)
+def foo():
 
     for k, pos, n, v in list(get_text_data(stream)):
-
         if v != data[pos : pos + len(v)].rstrip():
 
             if k == "SENT":
@@ -147,9 +139,26 @@ if __name__ == "__main__":
                     print(k, n)
                     print(f">>{v}<<")
                     print(f">>{new_data}<<")
-                    print()
             else:
                 print(k, n)
                 print(f">>{v}<<")
                 print(f">>{data[pos:pos+len(v)]}<<")
-                print()
+
+        else:
+            print(k, n, "OK")
+            print(f"{v}")
+
+    print()
+
+if __name__ == "__main__":
+
+    from sys import stdin, argv
+    from io import StringIO
+
+    stream = StringIO(stdin.read())
+    data = stream.getvalue()
+    stream.seek(0)
+
+    for k, pos, n, v in list(get_text_data(stream)):
+        print(k, pos, n, v)
+

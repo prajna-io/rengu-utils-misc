@@ -13,7 +13,7 @@ way() {
     rengu show -ojson Category=commentary \
         Source.ID=7a270324-e66c-45bf-af0d-c7bafae9fe40 ) | \
         jq -r '{ ID, page: .Source.Page, locus: (.Source.Locus // ""), first: ( .Title // (.Body | split("\n") | ( .[0] + " …" ) ) ) } | @text "\(.ID) \(.page)  \t\(.locus) \t\(.first)"' |  \
-        sort -k2g -k3V
+        sort -k2gr -k3V
 }
 
 bigredbook() {
