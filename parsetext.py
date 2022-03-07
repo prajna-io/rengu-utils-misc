@@ -150,6 +150,7 @@ def foo():
 
     print()
 
+
 if __name__ == "__main__":
 
     from sys import stdin, argv
@@ -161,4 +162,3 @@ if __name__ == "__main__":
 
     for k, pos, n, v in list(get_text_data(stream)):
         print(k, pos, n, v)
-
