@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from unicodedata import category as unicodedata_category
 from typing import TextIO
+from unicodedata import category as unicodedata_category
 
 
 def get_text_data(fd: TextIO):
@@ -35,84 +35,81 @@ def get_text_data(fd: TextIO):
 
         ordinal = ord(c)
 
-        match category[0]:
+        if category[0] == "L":
 
-            # Letter
-            case "L":
+            # New word
+            if not word:
+                word_pos = pos
 
-                # New word
-                if not word:
-                    word_pos = pos
+            word += c
+            line += c
 
-                word += c
+            if not sent:
+                sent_pos = pos
+            sent += c
+
+            if not blok:
+                blok_pos = pos
+            blok += c
+
+        # Separator
+        elif category[0] in "MNPSZC":
+
+            # Connectors ... ignore
+            if (word and category == "Cf") or (word and category == "Pc"):
+                pass
+
+            # Sentence Breaker
+            elif category == "Po":
+                sent += c
                 line += c
 
-                if not sent:
-                    sent_pos = pos
-                sent += c
+                if c in ".?!¿¡" and sent.strip():
+                    nsent += 1
+                    yield "SENT", sent_pos, nsent, sent
+                    sent = ""
 
                 if not blok:
                     blok_pos = pos
                 blok += c
 
-            # Separator
-            case "M" | "N" | "P" | "S" | "Z" | "C":
+            # Control character
+            elif ordinal in [0x0D, 0x0A]:
 
-                # Connectors ... ignore
-                if (word and category == "Cf") or (word and category == "Pc"):
-                    pass
-
-                # Sentence Breaker
-                elif category == "Po":
-                    sent += c
-                    line += c
-
-                    if c in ".?!¿¡" and sent.strip():
-                        nsent += 1
-                        yield "SENT", sent_pos, nsent, sent
-                        sent = ""
+                if line.strip():
+                    nline += 1
+                    yield "LINE", line_pos, nline, line.rstrip()
+                    line = ""
 
                     if not blok:
                         blok_pos = pos
                     blok += c
-
-                # Control character
-                elif ordinal in [0x0D, 0x0A]:
-
-                    if line.strip():
-                        nline += 1
-                        yield "LINE", line_pos, nline, line.rstrip()
-                        line = ""
-
-                        if not blok:
-                            blok_pos = pos
-                        blok += c
-
-                    else:
-                        nblok += 1
-                        yield "BLOK", blok_pos, nblok, blok.rstrip()
-                        blok = ""
-
-                    line_pos = pos + 1
-
-                    if sent:
-                        sent += " "
 
                 else:
-                    line += c
+                    nblok += 1
+                    yield "BLOK", blok_pos, nblok, blok.rstrip()
+                    blok = ""
 
-                    if sent:
-                        sent += c
+                line_pos = pos + 1
 
-                    if not blok:
-                        blok_pos = pos
-                    blok += c
+                if sent:
+                    sent += " "
 
-                # Handle word and sent
-                if word:
-                    nword += 1
-                    yield "WORD", word_pos, nword, word
-                    word = ""
+            else:
+                line += c
+
+                if sent:
+                    sent += c
+
+                if not blok:
+                    blok_pos = pos
+                blok += c
+
+            # Handle word and sent
+            if word:
+                nword += 1
+                yield "WORD", word_pos, nword, word
+                word = ""
 
         pos += 1
 
@@ -153,8 +150,8 @@ def foo():
 
 if __name__ == "__main__":
 
-    from sys import stdin, argv
     from io import StringIO
+    from sys import stdin
 
     stream = StringIO(stdin.read())
     data = stream.getvalue()

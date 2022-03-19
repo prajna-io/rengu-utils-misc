@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import sys
-from os import environ, rename
 from hashlib import sha256
+from os import environ
 from pathlib import Path
 
 BUFFER_SIZE = 8192

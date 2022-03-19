@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
-from datetime import date
 import sys
+from datetime import date
 from uuid import uuid4
 
 sys.path.append("/home/thornton/work/iching")
 
 
-from yijing import Hexagram
 from yijing.reading import Reading
 
 r = Reading(sys.argv[1])
@@ -15,25 +14,28 @@ r = Reading(sys.argv[1])
 now = date.strftime(date.today(), "%Y%m%d")
 uid = str(uuid4())
 
-print(f"""---
+print(
+    f"""---
 ID: {uid}
 Category: journal
-Date: {now}""")
+Date: {now}"""
+)
 
 if r.a == r.b:
-    print(f"""Title: {chr(r.a.unicode)}
+    print(
+        f"""Title: {chr(r.a.unicode)}
 ---
 {r.a.description()} ({r.a.wen}/{r.a.fuxi}) - {r.a.description("Prime")}
-""")
+"""
+    )
 
 else:
-    print(f"""Title: {chr(r.a.unicode)} ⇒ {chr(r.b.unicode)}
+    print(
+        f"""Title: {chr(r.a.unicode)} ⇒ {chr(r.b.unicode)}
 ---
 {r.a.description()} ({r.a.wen}/{r.a.fuxi}) - {r.a.description("Prime")}
-""")
+"""
+    )
     for x in r.changing_lines():
         print(f"{x} - \n")
     print(f"{r.b.description()} ({r.b.wen}/{r.b.fuxi}) - {r.b.description('Prime')}")
-
-
-
