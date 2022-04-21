@@ -58,6 +58,13 @@ lovepoems() {
         sort -k2g -k3V
 }
 
+chinesepoetry() {
+    rengu show -ojson Category=fragment \
+        Source.ID=9f99c8c4-1b0b-44ed-811b-92d0268f7de5 | \
+        jq  -r '{ ID, page: (.Source.Page ), locus: (.Source.Locus // ""), by: ( .By // .Description // .Source.Source.Title // "?" ), first: ( .Title // (.Body | split("\n") | ( .[0] + " …" ) ) ) } | @text "\(.ID) \(.page)  \t(.locus)  \t\(.by) = \(.first)"' | \
+        sort -k2g -k3V
+}
+
 
 technicians() {
     rengu show -ojson Category=fragment \
